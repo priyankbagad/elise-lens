@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-syne);
+  --color-accent: #7c3aed;
+  --color-accent-secondary: #a855f7;
+  --color-accent-dark: #6D28D9;
+  --color-highlight: #ddd6fe;
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F3FF;
+  --color-card: #FFFFFF;
+  --color-border: #EDE9FE;
+}
+
+body {
+  background: #FFFFFF;
+  color: #1A1A2E;
+  font-family: var(--font-dm-sans, "DM Sans", sans-serif);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
