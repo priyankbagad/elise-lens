@@ -9,7 +9,13 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
+    'https://elise-lens.vercel.app',
+    'https://eliselens.priyankbagad.com',
+    'https://www.eliselens.priyankbagad.com',
   ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-user-id'],
 }));
 app.use(express.json());
 app.use('/api', enrichRoute);
