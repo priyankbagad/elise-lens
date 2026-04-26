@@ -30,12 +30,6 @@ export function DashboardHeader({
 
       {/* Right controls */}
       <div className="flex items-center gap-3">
-        {/* Notification bell */}
-        <button className="relative w-8 h-8 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#1A1A2E] hover:bg-[#F5F3FF] transition-colors">
-          <BellIcon />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#7C3AED]" />
-        </button>
-
         {/* Enrich CTA */}
         <MagicLink href="/enrich" className="h-9 shadow-[0_4px_15px_rgba(124,58,237,0.35)]">
           <SparklesIcon />

@@ -6,21 +6,21 @@ import { CTABanner } from "@/components/landing/CTABanner";
 import { Footer } from "@/components/Footer";
 
 const products = [
-  { title: "Lead Enrichment",    thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/moonbeam.png" },
-  { title: "AI Lead Scoring",    thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/cursor.png" },
-  { title: "Outreach Email",     thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/rogue.png" },
-  { title: "City Intelligence",  thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/editorially.png" },
-  { title: "News Feed",          thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/editrix.png" },
-  { title: "CSV Batch Upload",   thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/pixelperfect.png" },
-  { title: "Score Dashboard",    thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/algochurn.png" },
-  { title: "Sales Insights",     thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/aceternityui.png" },
-  { title: "Pipeline View",      thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/tailwindmasterkit.png" },
-  { title: "Lead Profile",       thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/smartbridge.png" },
-  { title: "API Enrichment",     thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/renderwork.png" },
-  { title: "RevOps Automation",  thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/cremedigital.png" },
-  { title: "Hot Lead Alerts",    thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/goldenbellsacademy.png" },
-  { title: "CRM Ready Export",   thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/invoker.png" },
-  { title: "GTM Suite",          thumbnail: "https://www.aceternity.com/images/products/thumbnails/new/efreeinvoice.png" },
+  { title: "Dashboard Overview", link: "#", thumbnail: "/screenshots/ss-01.png" },
+  { title: "Lead Pipeline",      link: "#", thumbnail: "/screenshots/ss-02.png" },
+  { title: "Lead Enrichment",    link: "#", thumbnail: "/screenshots/ss-03.png" },
+  { title: "Score Output",       link: "#", thumbnail: "/screenshots/ss-04.png" },
+  { title: "Kanban Board",       link: "#", thumbnail: "/screenshots/ss-05.png" },
+  { title: "Analytics",          link: "#", thumbnail: "/screenshots/ss-06.png" },
+  { title: "Lead Profile",       link: "#", thumbnail: "/screenshots/ss-07.png" },
+  { title: "Login Page",         link: "#", thumbnail: "/screenshots/ss-08.png" },
+  { title: "City Intelligence",  link: "#", thumbnail: "/screenshots/ss-09.png" },
+  { title: "Dashboard Overview", link: "#", thumbnail: "/screenshots/ss-01.png" },
+  { title: "Lead Pipeline",      link: "#", thumbnail: "/screenshots/ss-02.png" },
+  { title: "Lead Enrichment",    link: "#", thumbnail: "/screenshots/ss-03.png" },
+  { title: "Score Output",       link: "#", thumbnail: "/screenshots/ss-04.png" },
+  { title: "Kanban Board",       link: "#", thumbnail: "/screenshots/ss-05.png" },
+  { title: "Analytics",          link: "#", thumbnail: "/screenshots/ss-06.png" },
 ];
 
 export default function Home() {

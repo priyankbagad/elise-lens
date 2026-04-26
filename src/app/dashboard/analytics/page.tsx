@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
 
@@ -47,22 +48,27 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     setMounted(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`)
-      .then((r) => r.json())
-      .then((data) => {
-        const rows = (data.leads ?? []).map((l: Record<string, unknown>) => ({
-          id: l.id,
-          name: l.name,
-          company: l.company,
-          city: l.city,
-          state: l.state,
-          score: l.score,
-          tier: l.tier,
-          enrichedAt: l.created_at,
-        }));
-        setLeads(rows);
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`, {
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
-      .catch(() => setLeads([]));
+        .then((r) => r.json())
+        .then((data) => {
+          const rows = (data.leads ?? []).map((l: Record<string, unknown>) => ({
+            id: l.id,
+            name: l.name,
+            company: l.company,
+            city: l.city,
+            state: l.state,
+            score: l.score,
+            tier: l.tier,
+            enrichedAt: l.created_at,
+          }));
+          setLeads(rows);
+        })
+        .catch(() => setLeads([]));
+    })();
   }, []);
 
   if (!mounted) {

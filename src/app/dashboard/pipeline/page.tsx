@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import Link from "next/link";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { supabase } from "@/lib/supabase";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -51,28 +52,36 @@ const STAGES: { id: StageId; label: string; color: string; description: string }
 export default function PipelinePage() {
   const [pipeline, setPipeline] = useState<PipelineState>(EMPTY_PIPELINE);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
-    // Wipe any stale localStorage data from before the Supabase migration
     localStorage.removeItem("enrichedLeads");
     localStorage.removeItem("pipelineState");
     localStorage.clear();
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`)
-      .then((r) => r.json())
-      .then((data) => {
-        const leads: Lead[] = data.leads || [];
-        const grouped: PipelineState = {
-          new: leads.filter((l) => l.pipeline_stage === "new" || !l.pipeline_stage),
-          contacted: leads.filter((l) => l.pipeline_stage === "contacted"),
-          responded: leads.filter((l) => l.pipeline_stage === "responded"),
-          qualified: leads.filter((l) => l.pipeline_stage === "qualified"),
-          closed: leads.filter((l) => l.pipeline_stage === "closed"),
-        };
-        setPipeline(grouped);
-        setLoading(false);
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id || '';
+      setUserId(uid);
+
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`, {
+        headers: { 'x-user-id': uid },
       })
-      .catch(() => setLoading(false));
+        .then((r) => r.json())
+        .then((data) => {
+          const leads: Lead[] = data.leads || [];
+          const grouped: PipelineState = {
+            new: leads.filter((l) => l.pipeline_stage === "new" || !l.pipeline_stage),
+            contacted: leads.filter((l) => l.pipeline_stage === "contacted"),
+            responded: leads.filter((l) => l.pipeline_stage === "responded"),
+            qualified: leads.filter((l) => l.pipeline_stage === "qualified"),
+            closed: leads.filter((l) => l.pipeline_stage === "closed"),
+          };
+          setPipeline(grouped);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    })();
   }, []);
 
   const handleDragEnd = async (result: DropResult) => {

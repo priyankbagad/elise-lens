@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 /* ─── Context ──────────────────────────────────────────────────────────────── */
 
@@ -66,6 +67,23 @@ interface SidebarProps {
 export function Sidebar({ topLinks, bottomLinks = [], className }: SidebarProps) {
   const { open, setOpen } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<{ email?: string | null } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
+  const username = user?.email?.split('@')[0] || 'User';
+  const avatarText = username.slice(0, 2).toUpperCase();
 
   return (
     <motion.aside
@@ -142,9 +160,8 @@ export function Sidebar({ topLinks, bottomLinks = [], className }: SidebarProps)
       {/* ── User row ── */}
       <div className="flex-shrink-0 p-3 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer overflow-hidden">
-          {/* Avatar with ring */}
           <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/40 flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white shadow-sm">
-            PB
+            {avatarText}
           </div>
           <AnimatePresence initial={false}>
             {open && (
@@ -156,8 +173,8 @@ export function Sidebar({ topLinks, bottomLinks = [], className }: SidebarProps)
                 transition={{ duration: 0.12 }}
                 className="min-w-0 flex-1"
               >
-                <p className="text-xs font-semibold text-white truncate leading-tight">Priyank Bagad</p>
-                <p className="text-[10px] text-white/50 truncate mt-0.5">GTM Engineer</p>
+                <p className="text-xs font-semibold text-white truncate leading-tight">{username}</p>
+                <p className="text-[10px] text-white/50 truncate mt-0.5">{user?.email || 'Loading…'}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -165,6 +182,16 @@ export function Sidebar({ topLinks, bottomLinks = [], className }: SidebarProps)
             <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
           )}
         </div>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          title={!open ? "Sign out" : undefined}
+          className="mt-1 flex items-center gap-2 text-sm text-red-300/70 hover:text-red-300 transition-colors px-2 py-2 rounded-lg hover:bg-white/[0.06] w-full"
+        >
+          <span className="flex-shrink-0 w-[18px] h-[18px]"><LogOutIcon /></span>
+          {open && <span className="text-xs whitespace-nowrap">Sign out</span>}
+        </button>
       </div>
     </motion.aside>
   );
@@ -268,6 +295,16 @@ function ChevronRight() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
       <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
+}
+
+function LogOutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   );
 }

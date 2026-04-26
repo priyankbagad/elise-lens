@@ -20,6 +20,7 @@ const TypewriterSound = dynamic(
 export type Product = {
   title: string;
   thumbnail: string;
+  link?: string;
 };
 
 export function HeroParallax({ products }: { products: Product[] }) {
@@ -104,7 +105,7 @@ export function HeroParallax({ products }: { products: Product[] }) {
 
 function HeroHeader() {
   return (
-    <div className="max-w-7xl relative mx-auto py-20 md:py-40 px-4 w-full left-0 top-0">
+    <div className="max-w-7xl relative z-50 mx-auto py-20 md:py-40 px-4 w-full left-0 top-0">
       <motion.h1
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -138,7 +139,7 @@ function HeroHeader() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.45, ease: "easeOut" }}
-        className="flex flex-wrap items-center gap-4 mt-10"
+        className="flex flex-wrap items-center gap-4 mt-10 relative z-50 pointer-events-auto"
       >
         <MagicLink href="/dashboard">
           Launch Dashboard →
@@ -176,10 +177,7 @@ function ProductCard({
           alt={product.title}
         />
       </div>
-      <div className="absolute inset-0 h-full w-full opacity-0 group-hover/product:opacity-80 bg-black pointer-events-none rounded-2xl transition-opacity duration-300" />
-      <h2 className="absolute bottom-4 left-4 pointer-events-none opacity-0 group-hover/product:opacity-100 text-white font-semibold text-lg transition-opacity duration-300">
-        {product.title}
-      </h2>
+      <div className="absolute inset-0 h-full w-full opacity-0 group-hover/product:opacity-20 bg-black pointer-events-none rounded-2xl transition-opacity duration-300" />
     </motion.div>
   );
 }

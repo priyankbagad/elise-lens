@@ -9,21 +9,20 @@ import { EnrichForm, type LeadFormData } from "@/components/enrich/EnrichForm";
 import { EnrichOutput, type ApiResult } from "@/components/enrich/EnrichOutput";
 import { EnrichModal, EnrichToast } from "@/components/enrich/EnrichModal";
 import { CsvBatchPanel, type CsvLead } from "@/components/enrich/CsvBatchPanel";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 /* ── Error toast ──────────────────────────────────────────────────────────── */
 
-function ErrorToast({ onDismiss }: { onDismiss: () => void }) {
+function ErrorToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 24 }}
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm"
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm max-w-md"
     >
-      <span className="text-red-400 text-sm font-medium">
-        Enrichment failed — check the server and try again.
-      </span>
-      <button onClick={onDismiss} className="text-red-400/60 hover:text-red-400 text-xs ml-1">
+      <span className="text-red-400 text-sm font-medium">{message}</span>
+      <button onClick={onDismiss} className="text-red-400/60 hover:text-red-400 text-xs ml-1 flex-shrink-0">
         ✕
       </button>
     </motion.div>
@@ -41,6 +40,7 @@ export default function EnrichPage() {
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Enrichment failed — check the server and try again.");
   const [enrichmentResult, setEnrichmentResult] = useState<ApiResult | null>(null);
 
   const apiDone = useRef(false);
@@ -53,6 +53,7 @@ export default function EnrichPage() {
   const [csvProgress, setCsvProgress] = useState(0);
   const [csvSuccessCount, setCsvSuccessCount] = useState(0);
   const [csvFailCount, setCsvFailCount] = useState(0);
+  const [csvLeadStatuses, setCsvLeadStatuses] = useState<Array<"enriched" | "updated" | "failed" | "pending">>([]);
 
   /* ── Single-lead handlers ── */
 
@@ -77,9 +78,8 @@ export default function EnrichPage() {
     pendingResult.current = null;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/enrich`, {
+      const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/enrich`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: data.fullName,
           company: data.companyName,
@@ -88,15 +88,15 @@ export default function EnrichPage() {
           email: data.email,
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result: ApiResult = await res.json();
-      pendingResult.current = result;
+      if (!result) return; // session expired, already redirecting
+      pendingResult.current = result as ApiResult;
       apiDone.current = true;
       tryFinalize();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Enrich error:", err);
       setShowModal(false);
       setEnrichState("idle");
+      setErrorMessage(err?.message ?? "Enrichment failed — check the server and try again.");
       setShowError(true);
     }
   }
@@ -114,6 +114,25 @@ export default function EnrichPage() {
       skipEmptyLines: true,
       transformHeader: (h) => h.toLowerCase().trim().replace(/\s+/g, "_"),
       complete: (results) => {
+        // Column validation
+        const fields = (results.meta.fields ?? []) as string[];
+        const missingCols: string[] = [];
+        if (!fields.includes("name") && !fields.includes("full_name")) missingCols.push("name");
+        if (!fields.includes("city")) missingCols.push("city");
+        if (!fields.includes("state")) missingCols.push("state");
+
+        if (missingCols.length > 0) {
+          setErrorMessage(`Missing required columns: ${missingCols.join(", ")}. Expected: name, email, company, address, city, state`);
+          setShowError(true);
+          return;
+        }
+
+        if (results.data.length === 0) {
+          setErrorMessage("No valid leads found in CSV");
+          setShowError(true);
+          return;
+        }
+
         const leads: CsvLead[] = results.data
           .map((row) => ({
             name: (row.name ?? row.full_name ?? "").trim(),
@@ -126,6 +145,7 @@ export default function EnrichPage() {
           .filter((l) => l.name && l.city && l.state);
 
         if (leads.length === 0) {
+          setErrorMessage("No valid leads found in CSV. Each row needs at least name, city, and state.");
           setShowError(true);
           return;
         }
@@ -133,7 +153,10 @@ export default function EnrichPage() {
         setCsvLeads(leads);
         setCsvMode("preview");
       },
-      error: () => setShowError(true),
+      error: () => {
+        setErrorMessage("Failed to parse CSV — check the file format and try again.");
+        setShowError(true);
+      },
     });
   }
 
@@ -143,14 +166,17 @@ export default function EnrichPage() {
     let successes = 0;
     let failures = 0;
 
+    const statuses: Array<"enriched" | "updated" | "failed" | "pending"> =
+      new Array(csvLeads.length).fill("pending");
+    setCsvLeadStatuses([...statuses]);
+
     for (let i = 0; i < csvLeads.length; i++) {
       setCsvProgress(i + 1);
       const lead = csvLeads[i];
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/enrich`, {
+        const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/enrich`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: lead.name,
             email: lead.email,
@@ -160,16 +186,21 @@ export default function EnrichPage() {
             state: lead.state,
           }),
         });
-        if (res.ok) {
-          successes++;
-        } else {
+        if (!data) {
+          // session expired, already redirecting
+          statuses[i] = "failed";
           failures++;
-          console.warn(`Failed to enrich ${lead.name}: HTTP ${res.status}`);
+        } else {
+          successes++;
+          statuses[i] = data.isUpdate ? "updated" : "enriched";
         }
       } catch (err) {
         failures++;
+        statuses[i] = "failed";
         console.error(`Error enriching ${lead.name}:`, err);
       }
+
+      setCsvLeadStatuses([...statuses]);
 
       // 1-second gap between calls (except after the last one)
       if (i < csvLeads.length - 1) {
@@ -210,6 +241,7 @@ export default function EnrichPage() {
             progress={csvProgress}
             successCount={csvSuccessCount}
             failCount={csvFailCount}
+            leadStatuses={csvLeadStatuses}
             onEnrichAll={handleCsvEnrich}
             onCancel={handleCsvCancel}
             onViewDashboard={() => router.push("/dashboard")}
@@ -230,7 +262,7 @@ export default function EnrichPage() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showError && <ErrorToast onDismiss={() => setShowError(false)} />}
+        {showError && <ErrorToast message={errorMessage} onDismiss={() => setShowError(false)} />}
       </AnimatePresence>
     </>
   );

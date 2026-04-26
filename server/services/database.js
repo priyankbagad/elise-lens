@@ -2,19 +2,18 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 async function upsertLead(leadData) {
   const email = leadData.lead.email;
+  const userId = leadData.userId || null;
 
-  // Check for an existing lead by email before inserting
   if (email) {
-    const { data: existing } = await supabase
-      .from('leads')
-      .select('id')
-      .eq('email', email)
-      .single();
+    let query = supabase.from('leads').select('id').eq('email', email);
+    if (userId) query = query.eq('user_id', userId);
+
+    const { data: existing } = await query.single();
 
     if (existing) {
       const { data: updated, error } = await supabase
@@ -40,11 +39,10 @@ async function upsertLead(leadData) {
         console.error('Supabase update error:', error);
         throw error;
       }
-      return updated;
+      return { ...updated, _isUpdate: true };
     }
   }
 
-  // No duplicate found — insert fresh record
   return saveLead(leadData);
 }
 
@@ -65,6 +63,7 @@ async function saveLead(leadData) {
       outreach: leadData.outreach,
       scoring: leadData.scoring,
       pipeline_stage: 'new',
+      user_id: leadData.userId || null,
     }])
     .select()
     .single();
@@ -76,12 +75,15 @@ async function saveLead(leadData) {
   return data;
 }
 
-async function getAllLeads() {
-  const { data, error } = await supabase
+async function getAllLeads(userId) {
+  let query = supabase
     .from('leads')
     .select('*')
     .order('created_at', { ascending: false });
 
+  if (userId) query = query.eq('user_id', userId);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }

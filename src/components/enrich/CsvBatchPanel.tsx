@@ -21,6 +21,7 @@ interface CsvBatchPanelProps {
   progress: number;   // 1-based current index while enriching
   successCount: number;
   failCount: number;
+  leadStatuses?: Array<"enriched" | "updated" | "failed" | "pending">;
   onEnrichAll: () => void;
   onCancel: () => void;
   onViewDashboard: () => void;
@@ -34,6 +35,7 @@ export function CsvBatchPanel({
   progress,
   successCount,
   failCount,
+  leadStatuses = [],
   onEnrichAll,
   onCancel,
   onViewDashboard,
@@ -184,16 +186,25 @@ export function CsvBatchPanel({
             {/* Completed ticks */}
             {progress > 1 && (
               <div className="flex flex-wrap gap-1.5 justify-center max-w-xs">
-                {leads.slice(0, progress - 1).map((l, i) => (
-                  <motion.span
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-600 font-medium"
-                  >
-                    ✓ {l.name.split(" ")[0]}
-                  </motion.span>
-                ))}
+                {leads.slice(0, progress - 1).map((l, i) => {
+                  const status = leadStatuses[i] ?? "enriched";
+                  const chip =
+                    status === "updated"
+                      ? { icon: "↻", cls: "bg-purple-50 border-purple-200 text-purple-600" }
+                      : status === "failed"
+                      ? { icon: "✗", cls: "bg-red-50 border-red-200 text-red-500" }
+                      : { icon: "✓", cls: "bg-emerald-50 border-emerald-200 text-emerald-600" };
+                  return (
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium", chip.cls)}
+                    >
+                      {chip.icon} {l.name.split(" ")[0]}
+                    </motion.span>
+                  );
+                })}
               </div>
             )}
           </motion.div>
@@ -223,15 +234,30 @@ export function CsvBatchPanel({
                 className="text-xl font-bold text-[#1A1A2E]"
                 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)" }}
               >
-                {successCount} lead{successCount !== 1 ? "s" : ""} enriched!
+                {successCount} lead{successCount !== 1 ? "s" : ""} processed!
               </h2>
+              {(() => {
+                const updatedCount = leadStatuses.filter(s => s === "updated").length;
+                const enrichedCount = leadStatuses.filter(s => s === "enriched").length;
+                if (updatedCount > 0 && enrichedCount > 0) {
+                  return (
+                    <p className="text-xs text-neutral-400 mt-1">
+                      {enrichedCount} new · {updatedCount} updated
+                    </p>
+                  );
+                }
+                if (updatedCount > 0) {
+                  return <p className="text-xs text-neutral-400 mt-1">{updatedCount} existing lead{updatedCount !== 1 ? "s" : ""} updated</p>;
+                }
+                return null;
+              })()}
               {failCount > 0 && (
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-red-400 mt-1">
                   {failCount} lead{failCount !== 1 ? "s" : ""} failed — check the console for details.
                 </p>
               )}
               <p className="text-sm text-neutral-400 mt-1">
-                All enriched leads are saved to Supabase and ready in your pipeline.
+                All leads are saved and ready in your pipeline.
               </p>
             </div>
 

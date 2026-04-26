@@ -19,6 +19,7 @@ const {
 
 router.post('/enrich', async (req, res) => {
   const { name, email, company, address, city, state } = req.body;
+  const userId = req.headers['x-user-id'] || null;
 
   if (!name || !city || !state) {
     return res.status(400).json({ error: 'name, city and state are required' });
@@ -79,10 +80,14 @@ router.post('/enrich', async (req, res) => {
         talkTrack: outreach.talkTrack,
         bestTimeToCall: outreach.bestTimeToCall,
       },
+      userId,
     });
 
+    const { _isUpdate, ...leadRecord } = savedLead;
+
     return res.json({
-      lead: { ...savedLead },
+      lead: { ...leadRecord },
+      isUpdate: !!_isUpdate,
       enrichment: {
         population: enriched.population,
         medianIncome: enriched.medianIncome,
@@ -123,7 +128,8 @@ router.delete('/leads/cleanup', async (req, res) => {
 
 router.get('/leads', async (req, res) => {
   try {
-    const leads = await getAllLeads();
+    const userId = req.headers['x-user-id'] || null;
+    const leads = await getAllLeads(userId);
     res.json({ leads });
   } catch (err) {
     res.status(500).json({ error: err.message });

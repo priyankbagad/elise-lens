@@ -40,6 +40,16 @@ export function EnrichModal({ isOpen, onComplete }: EnrichModalProps) {
   const [steps, setSteps] = useState<EnrichStep[]>(() =>
     makeSteps(STEP_DEFS.map(() => "pending"))
   );
+  const [elapsedSecs, setElapsedSecs] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setElapsedSecs(0);
+      return;
+    }
+    const interval = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -86,6 +96,13 @@ export function EnrichModal({ isOpen, onComplete }: EnrichModalProps) {
   const progress = steps.length > 0 ? (doneCount / steps.length) * 100 : 0;
   const allDone = steps.length > 0 && doneCount === steps.length;
   const activeIdx = steps.findIndex((s) => s.status === "active");
+
+  const timeoutMsg =
+    elapsedSecs >= 30
+      ? "This is taking unusually long. You can wait or try again."
+      : elapsedSecs >= 15
+      ? "Still working... APIs are taking longer than usual"
+      : null;
 
   const stepLabel = allDone
     ? "Complete!"
@@ -274,6 +291,23 @@ export function EnrichModal({ isOpen, onComplete }: EnrichModalProps) {
                 >
                   {stepLabel}
                 </motion.p>
+              </AnimatePresence>
+              <AnimatePresence>
+                {timeoutMsg && (
+                  <motion.p
+                    key={timeoutMsg}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={cn(
+                      "text-[11px] text-center font-medium pt-1",
+                      elapsedSecs >= 30 ? "text-amber-500" : "text-[#7C3AED]"
+                    )}
+                  >
+                    {timeoutMsg}
+                  </motion.p>
+                )}
               </AnimatePresence>
             </div>
           </motion.div>

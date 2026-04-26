@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useInView, animate } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 /* ── Types ───────────────────────────────────────────────────────────────────── */
 
@@ -23,9 +24,11 @@ export function BentoStats() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`)
-      .then((r) => r.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`);
+        if (!data) return;
+        {
         const leads: Array<{ score: number; tier: string; created_at: string }> =
           data.leads ?? [];
         const total = leads.length;
@@ -58,10 +61,11 @@ export function BentoStats() {
         });
 
         setStats({ total, avgScore, thisWeek, hot, warm, cool, hotPct, sparkline });
-      })
-      .catch(() =>
-        setStats({ total: 0, avgScore: 0, thisWeek: 0, hot: 0, warm: 0, cool: 0, hotPct: 0, sparkline: Array(13).fill(0) })
-      );
+        }
+      } catch {
+        setStats({ total: 0, avgScore: 0, thisWeek: 0, hot: 0, warm: 0, cool: 0, hotPct: 0, sparkline: Array(13).fill(0) });
+      }
+    })();
   }, []);
 
   if (!stats) {
@@ -183,10 +187,6 @@ function TotalLeadsCard({ total }: { total: number }) {
         >
           <AnimatedNumber to={total} />
         </span>
-      </div>
-      <div className="flex items-center gap-1.5 mt-3">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <p className="text-xs text-neutral-400">All time · live from Supabase</p>
       </div>
     </div>
   );
@@ -368,7 +368,6 @@ function HotLeadCard({ hotPct, hot, total }: { hotPct: number; hot: number; tota
             transition={{ duration: 1.4, delay: 0.2, ease: "easeOut" }}
           />
         </div>
-        <p className="text-[10px] text-neutral-400 mt-1.5">Live from Supabase</p>
       </div>
     </div>
   );

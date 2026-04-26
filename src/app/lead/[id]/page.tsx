@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { fetchWithAuth } from "@/lib/apiClient";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -58,10 +59,10 @@ export default function LeadProfilePage() {
   const [lead, setLead] = useState<StoredLead | null | undefined>(undefined);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.lead) { setLead(null); return; }
+    (async () => {
+      try {
+        const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${id}`);
+        if (!data || !data.lead) { setLead(null); return; }
         const l = data.lead;
         setLead({
           id: l.id,
@@ -87,8 +88,10 @@ export default function LeadProfilePage() {
             outreach: l.outreach,
           },
         });
-      })
-      .catch(() => setLead(null));
+      } catch {
+        setLead(null);
+      }
+    })();
   }, [id]);
 
   if (lead === undefined) {
@@ -112,7 +115,7 @@ export default function LeadProfilePage() {
           Lead not found
         </p>
         <p className="text-neutral-500 text-sm text-center max-w-xs">
-          This lead may have been removed or the ID is invalid.
+          This lead may have been deleted or you don&apos;t have access to it.
         </p>
         <MagicLink href="/dashboard" variant="ghost" className="mt-1 h-9">
           <span className="w-4 h-4"><ArrowLeftIcon /></span>

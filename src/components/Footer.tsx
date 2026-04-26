@@ -48,7 +48,9 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <span className="opacity-40 cursor-not-allowed">Lead Pipeline (soon)</span>
+                <a href="/dashboard/pipeline" className="hover:text-[#A855F7] transition-colors">
+                  Lead Pipeline
+                </a>
               </li>
             </ul>
           </div>
@@ -89,12 +91,8 @@ export function Footer() {
         {/* Divider */}
         <div className="border-t border-white/10 pt-8 flex items-center justify-between">
           <p className="text-gray-500 text-sm">
-            © 2025 Elise Lens · Built by Priyank Bagad
+            © 2026 Elise Lens · Built by Priyank Bagad
           </p>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-sm">Powered by</span>
-            <span className="text-[#A855F7] font-semibold text-sm">Claude AI</span>
-          </div>
         </div>
 
       </div>

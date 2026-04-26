@@ -43,6 +43,14 @@ app.get('/test-census', async (req, res) => {
   }
 });
 
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Something went wrong',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+  });
+});
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () =>
   console.log(`Elise Lens server running on port ${PORT}`));

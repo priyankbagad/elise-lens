@@ -38,6 +38,7 @@ const DEFAULTS: LeadFormData = {
 export function EnrichForm({ onSubmit, onCsvFile, disabled = false }: EnrichFormProps) {
   const [form, setForm] = useState<LeadFormData>(DEFAULTS);
   const [isDragging, setIsDragging] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFile(file: File | null | undefined) {
@@ -45,13 +46,28 @@ export function EnrichForm({ onSubmit, onCsvFile, disabled = false }: EnrichForm
   }
 
   function set(field: keyof LeadFormData) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      if (errors[field]) setErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+    };
+  }
+
+  function validate(): Record<string, string> {
+    const errs: Record<string, string> = {};
+    if (!form.fullName.trim()) errs.fullName = "Name is required";
+    if (!form.city.trim()) errs.city = "City is required";
+    if (!form.state.trim()) errs.state = "State is required";
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      errs.email = "Invalid email format";
+    return errs;
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!disabled) onSubmit(form);
+    if (disabled) return;
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length === 0) onSubmit(form);
   }
 
   return (
@@ -80,6 +96,7 @@ export function EnrichForm({ onSubmit, onCsvFile, disabled = false }: EnrichForm
             value={form.fullName}
             onChange={set("fullName")}
             disabled={disabled}
+            error={errors.fullName}
             autoFocus
           />
           <Field
@@ -89,6 +106,7 @@ export function EnrichForm({ onSubmit, onCsvFile, disabled = false }: EnrichForm
             value={form.email}
             onChange={set("email")}
             disabled={disabled}
+            error={errors.email}
           />
           <Field
             label="Company Name"
@@ -111,6 +129,7 @@ export function EnrichForm({ onSubmit, onCsvFile, disabled = false }: EnrichForm
               value={form.city}
               onChange={set("city")}
               disabled={disabled}
+              error={errors.city}
             />
             <Field
               label="State"
@@ -120,6 +139,7 @@ export function EnrichForm({ onSubmit, onCsvFile, disabled = false }: EnrichForm
               disabled={disabled}
               maxLength={2}
               className="uppercase"
+              error={errors.state}
             />
           </div>
 
@@ -215,6 +235,7 @@ function Field({
   maxLength,
   className,
   autoFocus,
+  error,
 }: {
   label: string;
   placeholder: string;
@@ -225,6 +246,7 @@ function Field({
   maxLength?: number;
   className?: string;
   autoFocus?: boolean;
+  error?: string;
 }) {
   return (
     <div>
@@ -244,9 +266,11 @@ function Field({
           "bg-[#F5F3FF] border border-[#EDE9FE] text-[#1A1A2E] placeholder:text-[#9CA3AF]",
           "focus:border-[#7C3AED]/40 focus:bg-white focus:ring-2 focus:ring-[#7C3AED]/10",
           disabled && "opacity-40 cursor-not-allowed",
+          error && "border-red-400 focus:border-red-400 focus:ring-red-100",
           className
         )}
       />
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 }

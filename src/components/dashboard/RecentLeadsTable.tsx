@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MagicLink } from "@/components/ui/MagicButton";
+import { fetchWithAuth } from "@/lib/apiClient";
 
 /* ─── Mock data ──────────────────────────────────────────────────────────────── */
 
@@ -50,15 +51,17 @@ type SortKey = "name" | "score" | "date";
 
 export function RecentLeadsTable() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "hot" | "warm" | "cool">("all");
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`)
-      .then((r) => r.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`);
+        if (!data) return;
         const rows = (data.leads ?? []).map(
           (l: {
             id: string;
@@ -82,8 +85,12 @@ export function RecentLeadsTable() {
           })
         );
         setLeads(rows);
-      })
-      .catch(() => setLeads([]));
+      } catch {
+        setLeads([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const filtered = leads.filter((l) => {
@@ -173,17 +180,44 @@ export function RecentLeadsTable() {
 
       {/* Rows */}
       <div>
-        <AnimatePresence mode="popLayout">
-          {sorted.map((lead, i) => (
-            <LeadRow key={lead.id} lead={lead} index={i} />
-          ))}
-        </AnimatePresence>
-        {sorted.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-14 gap-2">
-            <span className="text-2xl">🔍</span>
-            <p className="text-sm font-medium text-[#1A1A2E]">No leads found</p>
-            <p className="text-xs text-neutral-400 mt-0.5">Try a different search term or filter</p>
+        {!loading && leads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="w-16 h-16 rounded-full bg-[#F5F3FF] flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+            </div>
+            <h3
+              className="font-semibold text-[#1A1A2E]"
+              style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)" }}
+            >
+              No leads yet
+            </h3>
+            <p className="text-[#6B7280] text-sm text-center max-w-xs">
+              Enrich your first lead to see it appear here with AI-powered insights.
+            </p>
+            <a
+              href="/enrich"
+              className="bg-[#7C3AED] text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-[#6D28D9] transition-colors"
+            >
+              Enrich First Lead →
+            </a>
           </div>
+        ) : (
+          <>
+            <AnimatePresence mode="popLayout">
+              {sorted.map((lead, i) => (
+                <LeadRow key={lead.id} lead={lead} index={i} />
+              ))}
+            </AnimatePresence>
+            {!loading && leads.length > 0 && sorted.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-14 gap-2">
+                <span className="text-2xl">🔍</span>
+                <p className="text-sm font-medium text-[#1A1A2E]">No leads found</p>
+                <p className="text-xs text-neutral-400 mt-0.5">Try a different search term or filter</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
