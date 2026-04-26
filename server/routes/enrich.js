@@ -129,9 +129,12 @@ router.delete('/leads/cleanup', async (req, res) => {
 router.get('/leads', async (req, res) => {
   try {
     const userId = req.headers['x-user-id'] || null;
+    console.log('GET /leads userId:', userId);
     const leads = await getAllLeads(userId);
-    res.json({ leads });
+    console.log('Leads found:', leads?.length);
+    res.json({ leads: leads || [] });
   } catch (err) {
+    console.error('Get leads error:', err);
     res.status(500).json({ error: err.message });
   }
 });

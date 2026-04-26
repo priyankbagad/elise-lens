@@ -76,14 +76,19 @@ async function saveLead(leadData) {
 }
 
 async function getAllLeads(userId) {
+  console.log('getAllLeads called with userId:', userId);
+
   let query = supabase
     .from('leads')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (userId) query = query.eq('user_id', userId);
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
 
   const { data, error } = await query;
+  console.log('Supabase returned:', data?.length, 'leads');
   if (error) throw error;
   return data;
 }
